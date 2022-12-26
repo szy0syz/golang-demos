@@ -1,4 +1,8 @@
 {
 	"name": "jerry",
-	"age": 18
+	"tags": ["a", "b", "c"],
+	"hp": {
+		"value": 100,
+		"notes": "full"
+	}
 }
