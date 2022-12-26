@@ -19,7 +19,7 @@ type CreatureHP struct {
 }
 
 func readDirectory() {
-	files, err := ioutil.ReadDir("./read-file-and-covert-json/data")
+	files, err := ioutil.ReadDir("./01-convert-json/data")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func readDirectory() {
 }
 
 func readNode() {
-	content, err := ioutil.ReadFile("./read-file-and-covert-json/data/1.json")
+	content, err := ioutil.ReadFile("./01-convert-json/data/1.json")
 	if err != nil {
 		fmt.Println("Error reading file")
 	}
