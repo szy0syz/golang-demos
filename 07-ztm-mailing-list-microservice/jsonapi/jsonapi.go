@@ -2,9 +2,12 @@ package jsonapi
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
+	"mailinglist/mdb"
 	"net/http"
 )
 
@@ -49,7 +52,9 @@ func returnJson[T any](w http.ResponseWriter, withData func() (T, error)) {
 
 // 又是闭包又是泛型，多少有点不习惯
 func returnErr(w http.ResponseWriter, err error, code int) {
+	// 先传个万能接口占位置
 	returnJson(w, func() (interface{}, error) {
+		// 这里边定义边赋值
 		errorMessage := struct {
 			Err string
 		}{
@@ -57,5 +62,120 @@ func returnErr(w http.ResponseWriter, err error, code int) {
 		}
 		w.WriteHeader(code)
 		return errorMessage, nil
+	})
+}
+
+func Serve(db *sql.DB, bind string) {
+	http.Handle("/email/create", CreateEmail(db))
+	http.Handle("/email/get", GetEmail(db))
+	http.Handle("/email/get_batch", GetEmailBatch(db))
+	http.Handle("/email/update", UpdateEmail(db))
+	http.Handle("/email/delete", DeleteEmail(db))
+
+	err := http.ListenAndServe(bind, nil)
+	if err != nil {
+		log.Fatalf("JSON server error: %v", err)
+	}
+}
+
+func GetEmailBatch(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "GET" {
+			return
+		}
+
+		queryOptions := mdb.GetEmailBatchQueryParams{}
+		fromJson(req.Body, &queryOptions)
+
+		if queryOptions.Count <= 0 || queryOptions.Page <= 0 {
+			returnErr(w, errors.New("Page and Count fields are required and must be > 0"), 400)
+			return
+		}
+
+		returnJson(w, func() (interface{}, error) {
+			log.Printf("JSON GetEmailBatch: %v\n", queryOptions)
+			return mdb.GetEmailBatch(db, queryOptions)
+		})
+	})
+}
+
+func GetEmail(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "GET" {
+			return
+		}
+
+		// 我靠，不是吧，GET也传body是什么鬼
+		entry := mdb.EmailEntry{}
+		fromJson(req.Body, &entry)
+
+		returnJson(w, func() (interface{}, error) {
+			log.Printf("JSON GetEmail: %v\n", entry.Email)
+			return mdb.GetEmail(db, entry.Email)
+		})
+	})
+}
+
+func CreateEmail(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "POST" {
+			return
+		}
+
+		entry := mdb.EmailEntry{}
+		fromJson(req.Body, &entry)
+
+		// Golang就是方便啊，高效
+		if err := mdb.CreateEmail(db, entry.Email); err != nil {
+			returnErr(w, err, 400)
+			return
+		}
+
+		returnJson(w, func() (interface{}, error) {
+			log.Printf("JSON CreateEmail: %v\n", entry.Email)
+			return mdb.GetEmail(db, entry.Email)
+		})
+	})
+}
+
+func UpdateEmail(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "PUT" {
+			return
+		}
+
+		entry := mdb.EmailEntry{}
+		fromJson(req.Body, &entry)
+
+		// Golang就是方便啊，高效
+		if err := mdb.UpdateEmail(db, entry); err != nil {
+			returnErr(w, err, 400)
+			return
+		}
+
+		returnJson(w, func() (interface{}, error) {
+			log.Printf("JSON UpdateEmail: %v\n", entry.Email)
+			return mdb.GetEmail(db, entry.Email)
+		})
+	})
+}
+
+func DeleteEmail(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "POST" {
+			return
+		}
+		entry := mdb.EmailEntry{}
+		fromJson(req.Body, &entry)
+
+		if err := mdb.DeleteEmail(db, entry.Email); err != nil {
+			returnErr(w, err, 400)
+			return
+		}
+
+		returnJson(w, func() (interface{}, error) {
+			log.Printf("JSON DeleteEmail: %v\n", entry.Email)
+			return mdb.GetEmail(db, entry.Email)
+		})
 	})
 }
