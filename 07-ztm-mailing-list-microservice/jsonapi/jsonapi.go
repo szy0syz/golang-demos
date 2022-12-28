@@ -71,7 +71,7 @@ func Serve(db *sql.DB, bind string) {
 	http.Handle("/email/get_batch", GetEmailBatch(db))
 	http.Handle("/email/update", UpdateEmail(db))
 	http.Handle("/email/delete", DeleteEmail(db))
-	log.Println("JSON API serve listening on :8080")
+	log.Println("JSON API server listening on :8080")
 	err := http.ListenAndServe(bind, nil)
 	if err != nil {
 		log.Fatalf("JSON server error: %v", err)
