@@ -5,6 +5,7 @@ import (
 	"bookstore/store"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -71,4 +72,22 @@ func response(w http.ResponseWriter, v interface{}) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
+}
+
+func (bs *BookStoreServer) ListenAndServe() (<-chan error, error) {
+	var err error
+	errChan := make(chan error)
+	go func() {
+		// 这里因为ListenAndServe()会阻塞线程，就放goroutine里
+		err = bs.serv.ListenAndServe()
+		errChan <- err
+	}()
+
+	select {
+	// 等他一秒不错就pass，好像有点不稳妥
+	case err = <-errChan:
+		return nil, err
+	case <-time.After(time.Second):
+		return errChan, nil
+	}
 }

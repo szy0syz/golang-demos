@@ -3,10 +3,12 @@ package store
 import (
 	mystore "bookstore/store"
 	"bookstore/store/factory"
+	"fmt"
 	"sync"
 )
 
 func init() {
+	fmt.Println("注册mem")
 	factory.Register("mem", &MemStore{
 		books: make(map[string]*mystore.Book),
 	})

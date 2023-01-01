@@ -29,7 +29,6 @@ func Register(name string, p store.Store) {
 func New(providerName string) (store.Store, error) {
 	// 上读锁
 	providersMu.RLock()
-	defer providersMu.Unlock()
 
 	// ---- 意味着这句话是有数据并行风险的
 	// ---- 啥意思呢？就是不能要 "脏读" 的意思，不能做无赖
