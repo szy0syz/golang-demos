@@ -3,6 +3,7 @@ package server
 import (
 	"bookstore/server/middleware"
 	"bookstore/store"
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -30,6 +31,10 @@ func NewBookStoreServer(addr string, s store.Store) *BookStoreServer {
 	serv.serv.Handler = middleware.Logging(middleware.Validating(router))
 
 	return serv
+}
+
+func (bs *BookStoreServer) Shutdown(ctx context.Context) error {
+	return bs.serv.Shutdown(ctx)
 }
 
 func (bs *BookStoreServer) createBookHandler(w http.ResponseWriter, req *http.Request) {

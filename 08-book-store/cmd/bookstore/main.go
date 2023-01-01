@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	// 注册了很多种provider，但我要mem那种类型
 	s, err := factory.New("mem")
 	if err != nil {
 		panic(err)
@@ -41,9 +42,9 @@ func main() {
 		log.Println("web server run failed:", err)
 	case <-c:
 		log.Println("bookstore program is exiting...")
-		_, cf := context.WithTimeout(context.Background(), time.Second)
+		ctx, cf := context.WithTimeout(context.Background(), time.Second)
 		defer cf()
-		//err = serv.Shutdown(ctx)
+		err = serv.Shutdown(ctx)
 	}
 	if err != nil {
 		log.Println("bookstore program exit error:", err)
